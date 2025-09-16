@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 const WebhookSchema = new mongoose.Schema({
   channel : String,
   method : String ,
-  headers : String,
+  headers : Object,
   body : Object,
-  recivedAt :{type : Date ,default : Date.now}
+  receivedAt: { type: Date, default: Date.now }
 });
 
 WebhookSchema.index({receivedAt : 1},{expireAfterSeconds:86400});

@@ -1,35 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function Channel() {
+  const { channel } = useParams();
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    // fetch history
+    fetch(`http://localhost:5000/history/${channel}`)
+      .then(res => res.json())
+      .then(data => setEvents(data.reverse()));
+
+    // open SSE stream
+    const evtSource = new EventSource(`http://localhost:5000/events/${channel}`);
+    evtSource.onmessage = e => {
+      const webhook = JSON.parse(e.data);
+      setEvents(prev => [...prev, webhook]);
+    };
+    return () => evtSource.close();
+  }, [channel]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="p-4">
+      <h1 className="text-xl font-bold">Channel {channel}</h1>
+      <ul className="mt-4 space-y-2">
+        {events.map((e, i) => (
+          <li key={i} className="p-2 bg-gray-100 rounded">
+            <p><b>{e.method}</b> at {new Date(e.receivedAt).toLocaleTimeString()}</p>
+            <pre className="text-xs overflow-x-auto">{JSON.stringify(e.body, null, 2)}</pre>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
-
-export default App
+ 
